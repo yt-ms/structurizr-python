@@ -17,7 +17,7 @@
 
 
 from abc import ABC
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from .element import Element, ElementIO
 
@@ -80,3 +80,26 @@ class StaticStructureElement(Element, ABC):
             technology=technology,
             **kwargs,
         )
+
+    def __rshift__(self, other: Union["StaticStructureElement", str]) -> Relationship:
+        """Add a simple relationship using `>>` syntax.
+
+        Examples:
+            element1 >> element2                      # This forms a "Uses" relationship from element1 to element2
+            element1 >> "Publishes to" >> element 2   # Form a relationship providing a specific description
+        """
+        if isinstance(other, StaticStructureElement):
+            return self.uses(other)
+        elif isinstance(other, str):
+            return self.add_relationship(description=other)
+        elif isinstance(other, Relationship):
+            return self.add_relationship(other)
+        else:
+            raise TypeError(
+                f"Adding relationship with >> not supported for type {type(other)}."
+            )
+
+    def __rrshift__(self, other: Relationship) -> "StaticStructureElement":
+        """Complete a relationship of the form `elt1 >> "description" >> elt2`."""
+        other.destination = self
+        return self

@@ -18,7 +18,7 @@
 
 import pytest
 
-from structurizr.model.model import Model
+from structurizr.model.model import Model, Relationship
 from structurizr.model.static_structure_element import StaticStructureElement
 
 
@@ -29,6 +29,7 @@ class ConcreteElement(StaticStructureElement):
 
 
 _model: Model = None  # Global reference to model so it doesn't get garbage-collected
+
 
 @pytest.fixture(scope="function")
 def empty_model() -> Model:
@@ -44,11 +45,10 @@ def test_static_structure_element_uses(empty_model: Model):
     element2 = ConcreteElement(name="Element2")
     element1.set_model(empty_model)
     element2.set_model(empty_model)
-    
-    element1.uses(element2)
 
-    assert len(element1.relationships) == 1
-    r = list(element1.relationships)[0]
+    r = element1.uses(element2)
+
+    assert list(element1.relationships) == [r]
     assert r.source is element1
     assert r.destination is element2
     assert r.description == "Uses"
@@ -60,12 +60,45 @@ def test_static_structure_element_delivers(empty_model: Model):
     element2 = ConcreteElement(name="Element2")
     element1.set_model(empty_model)
     element2.set_model(empty_model)
-    
-    element1.delivers(element2)
 
-    assert len(element1.relationships) == 1
-    r = list(element1.relationships)[0]
+    r = element1.delivers(element2)
+
+    assert list(element1.relationships) == [r]
     assert r.source is element1
     assert r.destination is element2
     assert r.description == "Delivers"
 
+
+def test_static_structure_element_add_relationship_shorthand(empty_model: Model):
+    """Check the various forms of adding relationships with `>>`."""
+    element1 = ConcreteElement(name="Element1")
+    element2 = ConcreteElement(name="Element2")
+    element3 = ConcreteElement(name="Element3")
+    element4 = ConcreteElement(name="Element3")
+    element1.set_model(empty_model)
+    element2.set_model(empty_model)
+    element3.set_model(empty_model)
+    element4.set_model(empty_model)
+
+    r = element1 >> element2
+    assert list(element1.relationships) == [r]
+    assert r.destination is element2
+    assert r.description == "Uses"
+
+    e = element2 >> "Publishes to" >> element3
+    assert e is element3  # This allows chaining of further >>
+    assert len(element2.relationships) == 1
+    r = list(element2.relationships)[0]
+    assert r.destination is element3
+    assert r.description == "Publishes to"
+
+    # Also check that you can add an existing relationship instance - whilst this is
+    # not the preferred style, it enables subtyping of Relationship for more advanced
+    # use-cases.
+    r = Relationship(description="Depends on")
+    element3 >> r >> element4
+    assert list(element3.relationships) == [r]
+
+    # Make sure you can't accidentally add wrong stuff
+    with pytest.raises(TypeError):
+        element1 >> 17
