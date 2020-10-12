@@ -69,7 +69,7 @@ class StaticStructureElement(Element, ABC):
     def delivers(
         self,
         destination: Element,
-        description: str,
+        description: str = "Delivers",
         technology: str = "",
         **kwargs,
     ) -> Optional["Relationship"]:
