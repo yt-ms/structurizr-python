@@ -25,6 +25,8 @@ from .element import Element, ElementIO
 if TYPE_CHECKING:  # pragma: no cover
     from .relationship import Relationship
 
+if TYPE_CHECKING:
+    from .person import Person
 
 __all__ = ("StaticStructureElementIO", "StaticStructureElement")
 
@@ -68,12 +70,12 @@ class StaticStructureElement(Element, ABC):
 
     def delivers(
         self,
-        destination: Element,
+        destination: "Person",
         description: str = "Delivers",
         technology: str = "",
         **kwargs,
     ) -> Optional["Relationship"]:
-        """Add a unidirectional relationship to another element."""
+        """Add a unidirectional relationship to a person."""
         return self.uses(
             destination=destination,
             description=description,
@@ -85,8 +87,11 @@ class StaticStructureElement(Element, ABC):
         """Add a simple relationship using `>>` syntax.
 
         Examples:
-            element1 >> element2                      # This forms a "Uses" relationship from element1 to element2
-            element1 >> "Publishes to" >> element 2   # Form a relationship providing a specific description
+            # Form a "Uses" relationship from element1 to element2.
+            element1 >> element2
+
+            # Form a relationship providing a specific description.
+            element1 >> "Publishes to" >> element 2
         """
         if isinstance(other, StaticStructureElement):
             return self.uses(other)
